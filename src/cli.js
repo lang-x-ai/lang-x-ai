@@ -7,15 +7,16 @@ import { translate } from "./translator.js";
 async function cli() {
     const [, , source, outputArg] = process.argv;
 
+
     // Ensure source file is provided
     if (!source) {
-        console.error("Usage: node src/cli.js <source.zs> [output]");
+        console.error("Usage: node src/cli.js <source.xl> [output]");
         process.exit(1);
     }
 
     // Ensure the source file has a .zs extension
-    if (!source.endsWith(".zs")) {
-        console.error("Error: Source file must have a .zs extension");
+    if (!source.endsWith(".xl")) {
+        console.error("Error: Source file must have a .xl extension");
         process.exit(1);
     }
 
@@ -28,6 +29,9 @@ async function cli() {
         process.exit(1);
     }
 
+
+    //Need to add for py, java
+
     // Determine output file name and ensure it has a .js extension
     const output = outputArg?.endsWith(".js")
         ? outputArg
@@ -37,23 +41,19 @@ async function cli() {
     try {
         // Read source file
         const code = fs.readFileSync(sourcePath, "utf-8");
-        // console.log("Debug: Source code read successfully");
 
         // Tokenize the code
         const tokens = tokenize(code);
-        // console.log("Debug: Tokens generated:", tokens);
 
         // Parse tokens into data
         const parsedData = parse(tokens);
-        // console.log("Debug: Parsed data:", parsedData);
 
         // Translate parsed data into target code
         const generatedCode = await translate(parsedData);
-        console.log("Debug: Generated code:", generatedCode);
 
         // Write generated code to the output file
         fs.writeFileSync(outputPath, generatedCode);
-        console.log(`Code generated and saved to ${outputPath}`);
+       
     } catch (error) {
         console.error("Error during processing:", error.message);
         console.error("Stack Trace:", error.stack);

@@ -12,6 +12,8 @@ async function translate(parsedData) {
         const body = funcData.body.map(([type, value]) => `${type} ${value}`).join("\n");
         functionDescriptions += `Function ${funcName}(${inputs}):\n${body}\n\n`;
     }
+
+    //Make the ai Promots better
     const aiPrompt = `
     Generate ${target_language} code with inline documentation based on the following requirements:
     ${prompt}

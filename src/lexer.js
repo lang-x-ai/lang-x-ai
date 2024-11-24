@@ -1,6 +1,9 @@
+
+
 function tokenize(code) {
     var tokens = [];
     var tokenSpec = [
+        //need better 
         ["TARGET", /TARGET_LANGUAGE: (.+)/i],
         ["PROMPT", /PROMPT: (.+)/i],
         ["DEFINE_FUNC", /DEFINE FUNCTION (\w+)/i],
