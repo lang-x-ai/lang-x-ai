@@ -1,6 +1,0 @@
-#!/bin/bash
-if [ ! -d "dist" ]; then
-    echo "Compiling TypeScript files for ZenithScript..."
-    npx tsc
-fi
-node dist/cli.js "$@"
