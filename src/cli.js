@@ -4,19 +4,19 @@ import { tokenize } from "./lexer.js";
 import { parse } from "./parser.js";
 import { translate } from "./translator.js";
 
-async function cli() {
+export async function cli() {
     const [, , source, outputArg] = process.argv;
 
 
     // Ensure source file is provided
     if (!source) {
-        console.error("Usage: node src/cli.js <source.xl> [output]");
+        console.error("Usage: node src/cli.js <source.x> [output]");
         process.exit(1);
     }
 
     // Ensure the source file has a .zs extension
-    if (!source.endsWith(".xl")) {
-        console.error("Error: Source file must have a .xl extension");
+    if (!source.endsWith(".x")) {
+        console.error("Error: Source file must have a .x extension");
         process.exit(1);
     }
 
@@ -28,15 +28,6 @@ async function cli() {
         console.error(`Error: Source file not found at "${sourcePath}"`);
         process.exit(1);
     }
-
-
-    //Need to add for py, java
-
-    // Determine output file name and ensure it has a .js extension
-    const output = outputArg?.endsWith(".js")
-        ? outputArg
-        : `${outputArg || "output"}.js`;
-    const outputPath = path.resolve(output);
 
     try {
         // Read source file
@@ -51,6 +42,39 @@ async function cli() {
         // Translate parsed data into target code
         const generatedCode = await translate(parsedData);
 
+        const targetLanguage  = parsedData.target_language;
+
+
+        let fileExtension;
+        switch (targetLanguage) {
+        case 'js':
+            fileExtension = '.js';
+            break;
+        case 'ts':
+            fileExtension = '.ts';
+            break;
+        case 'py':
+            fileExtension = '.py';
+            break;
+        case 'java':
+            fileExtension = '.java';
+            break;
+        case 'c':
+            fileExtension = '.c';
+            break;
+        case 'cpp':
+            fileExtension = '.cpp';
+            break;
+        default:
+            fileExtension = '.x'; // Default extension if language is unknown
+    }
+
+    const output = outputArg?.endsWith(fileExtension)
+    ? outputArg
+    : `${outputArg || "output"}${fileExtension}`;
+    const outputPath = path.resolve(output);
+
+
         // Write generated code to the output file
         fs.writeFileSync(outputPath, generatedCode);
        
@@ -60,5 +84,6 @@ async function cli() {
         process.exit(1);
     }
 }
+
 
 cli();

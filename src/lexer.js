@@ -1,9 +1,8 @@
 
-
 function tokenize(code) {
     var tokens = [];
     var tokenSpec = [
-        //need better 
+        //need better lexer, its too vague and abstract. 
         ["TARGET", /TARGET_LANGUAGE: (.+)/i],
         ["PROMPT", /PROMPT: (.+)/i],
         ["DEFINE_FUNC", /DEFINE FUNCTION (\w+)/i],

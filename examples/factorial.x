@@ -1,4 +1,4 @@
-TARGET_LANGUAGE: JavaScript
+TARGET_LANGUAGE: js
 
 DEFINE FUNCTION main
 PROMPT: Calculate the factorial of a given number recursively.

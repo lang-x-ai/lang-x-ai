@@ -26,6 +26,7 @@ async function translate(parsedData) {
     Don't add \`\`\`javascript\` \`\`\` this in this response
 `;
 
+
     return await generateAIResponse(aiPrompt);
 }
 
