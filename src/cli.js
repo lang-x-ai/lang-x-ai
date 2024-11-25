@@ -65,8 +65,11 @@ export async function cli() {
         case 'cpp':
             fileExtension = '.cpp';
             break;
+        case 'sol':
+                fileExtension = '.sol';
+                break;
         default:
-            fileExtension = '.x'; // Default extension if language is unknown
+            fileExtension = '.x'; 
     }
 
     const output = outputArg?.endsWith(fileExtension)
