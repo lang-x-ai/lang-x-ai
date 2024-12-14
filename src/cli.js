@@ -1,59 +1,76 @@
+import fs from "fs";
+import path from "path";
 import { InputStream } from "./inputStream.js";
 import { TokenStream } from "./lexer.js";
 import { parse } from "./parser.js";
 import { translate } from "./translator.js";
 
-// A simple print function that logs arguments to the console and calls a callback
-const print = function (k) {
-  console.log([].slice.call(arguments, 1).join(" "));
-  k(false);
-};
+// Removed readStdin function
 
-// Function to read from standard input and pass the input to a callback
-function readStdin(callback) {
-  let text = "";
-  process.stdin.setEncoding("utf8");
-  process.stdin.on("readable", function () {
-    const chunk = process.stdin.read();
-    if (chunk) text += chunk;
-  });
-  process.stdin.on("end", function () {
-    callback(text);
-  });
+const [, , source, targetLanguage] = process.argv;
+
+console.log("Starting CLI...");
+
+// Ensure source file is provided
+if (!source) {
+  console.error("Usage: node src/cli.js <source.x> <targetLanguage>");
+  process.exit(1);
 }
 
-// Main function to process the input code
-readStdin(async function (code) {
-  // Parse the input code into an abstract syntax tree (AST)
-  code = `
-  print_range = λ(a, b) if a <= b {
-          print(a);
-          if a + 1 <= b {
-            print(", ");
-            print_range(a + 1, b);
-          } else println("");
-        };
-        print_range(1, 10);
+// Ensure the source file has a .x extension
+if (!source.endsWith(".x")) {
+  console.error("Error: Source file must have a .x extension");
+  process.exit(1);
+}
 
-      `;
-  const ast = parse(TokenStream(InputStream(code)));
-  console.log(JSON.stringify(ast, null, 2));
+// Resolve the absolute path of the source file
+const sourcePath = path.resolve(source);
 
-  const generateAIResponse = await translate(JSON.stringify(ast, null, 2));
-  console.log(generateAIResponse);
+// Check if the source file exists
+if (!fs.existsSync(sourcePath)) {
+  console.error(`Error: Source file not found at "${sourcePath}"`);
+  process.exit(1);
+}
 
-  // // Convert the AST to continuation-passing style (CPS)
-  // const cps = to_cps(ast, function (x) {
-  //   return {
-  //     type: "call",
-  //     func: { type: "var", value: "Î²_TOPLEVEL" },
-  //     args: [x],
-  //   };
-  // });
+try {
+  // Read source file
+  const fileCode = fs.readFileSync(sourcePath, "utf-8");
 
-  // // Optimize the CPS representation
-  // const opt = optimize(cps);
+  const inputCode = InputStream(fileCode);
 
-  // // Generate JavaScript code from the optimized CPS
-  // let jsc = make_js(opt);
-});
+  // Tokenize the code
+  const tokens = TokenStream(inputCode);
+  console.log(fileCode);
+
+  // Parse tokens into data
+  const parsedData = parse(tokens);
+  console.log(parsedData);
+
+  // Translate parsed data into target code
+  const generatedCode = await translate(JSON.stringify(parsedData, null, 2));
+  console.log(generatedCode);
+
+  const fileExtensions = {
+    js: ".js",
+    ts: ".ts",
+    py: ".py",
+    java: ".java",
+    c: ".c",
+    cpp: ".cpp",
+    sol: ".sol",
+  };
+
+  const fileExtension = fileExtensions[targetLanguage] || ".py";
+
+  const output = `output${fileExtension}`;
+  const outputPath = path.resolve(output);
+  console.log(`Output path resolved: ${outputPath}`);
+
+  // Write generated code to the output file
+  fs.writeFileSync(outputPath, generatedCode);
+  console.log("Generated code written to file successfully.");
+} catch (error) {
+  console.error("Error during processing:", error.message);
+  console.error("Stack Trace:", error.stack);
+  process.exit(1);
+}

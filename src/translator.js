@@ -1,6 +1,6 @@
 import { generateAIResponse } from "./aiModel.js";
 
-async function translate(parsedData) {
+export async function translate(parsedData) {
   // There are a bunch of empty {} or [] being created in the parsedData.
   // I need to fix the promts.
 
@@ -10,8 +10,7 @@ async function translate(parsedData) {
   // }
 
   const aiPrompt = `
- You are a highly skilled and precise coding assistant. Your task is to generate code snippets based on the abstract syntax tree (AST) rules provided. The goal is to accurately translate or adapt provided "blocks" of code to the specified target language while integrating necessary logic from "variables" or "functions" within the entire codebase context.
-
+ You are a highly skilled and precise coding assistant. Your task is to generate code snippets based on the abstract syntax tree (AST) rules provided. 
 Here are the rules for the AST:
 
 1. **Node Types**: Understand and identify different node types.
@@ -27,6 +26,8 @@ Here are the rules for the AST:
 
 6. **Output**: Provide only the translated code, without additional explanations.
 
+7. write in py
+
 Use the entire codebase as context to ensure consistency and accuracy in translation. The target language is specified in the input, and the output should adhere to its syntax and conventions.
 
 Begin the translation process by analyzing the provided code block and applying the AST rules accordingly.
@@ -40,4 +41,3 @@ Here is the data = ${parsedData}
   return await generateAIResponse(aiPrompt.trim());
 }
 
-export { translate };

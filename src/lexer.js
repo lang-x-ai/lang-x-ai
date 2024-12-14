@@ -1,5 +1,6 @@
 // TokenStream handles tokenizing the input stream
 export function TokenStream(input) {
+  
   var current = null;
   var keywords = " let if then else lambda λ true false prompt js:raw ";
   return {
@@ -113,6 +114,7 @@ export function TokenStream(input) {
     return tok || read_next();
   }
   function eof() {
+    
     return peek() == null;
   }
 }
