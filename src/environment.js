@@ -1,5 +1,3 @@
-// parse(TokenStream(InputStream
-
 import { InputStream } from "./inputStream.js";
 import { TokenStream } from "./lexer.js";
 import { parse } from "./parser.js";
@@ -9,6 +7,7 @@ function Environment(parent) {
   this.vars = Object.create(parent ? parent.vars : null);
   this.parent = parent;
 }
+
 Environment.prototype = {
   // Extends the environment with a new scope
   extend: function () {
@@ -69,6 +68,10 @@ function evaluate(exp, env) {
     case "lambda":
       return make_lambda(env, exp);
 
+    // Needs to create a function to make a prompt, should be similar to lambda
+    case "prompt":
+      return 0;
+
     case "if":
       var cond = evaluate(exp.cond, env);
       if (cond !== false) return evaluate(exp.then, env);
@@ -80,6 +83,14 @@ function evaluate(exp, env) {
         val = evaluate(exp, env);
       });
       return val;
+
+    case "let":
+      exp.vars.forEach(function (v) {
+        var scope = env.extend();
+        scope.def(v.name, v.def ? evaluate(v.def, env) : false);
+        env = scope;
+      });
+      return evaluate(exp.body, env);
 
     case "call":
       var func = evaluate(exp.func, env);
@@ -138,6 +149,10 @@ function apply_op(op, a, b) {
 
 // Creates a lambda function
 function make_lambda(env, exp) {
+  if (exp.name) {
+    env = env.extend();
+    env.def(exp.name, lambda);
+  }
   function lambda() {
     var names = exp.vars;
     var scope = env.extend();
@@ -147,8 +162,6 @@ function make_lambda(env, exp) {
   }
   return lambda;
 }
-
-/* -----[ entry point for NodeJS ]----- */
 
 // Global environment setup
 var globalEnv = new Environment();
@@ -174,7 +187,7 @@ if (typeof process != "undefined")
       process.stdout.write(String(val));
     });
     var code = `
-        print_range = λ(a, b) if a <= b {
+  print_range = λ(a, b) if a <= b {
           print(a);
           if a + 1 <= b {
             print(", ");
@@ -182,6 +195,7 @@ if (typeof process != "undefined")
           } else println("");
         };
         print_range(1, 10);
+
       `;
     process.stdin.setEncoding("utf8");
     process.stdin.on("readable", function () {
@@ -189,7 +203,14 @@ if (typeof process != "undefined")
       if (chunk) code += chunk;
     });
     process.stdin.on("end", function () {
-      var ast = parse(TokenStream(InputStream(code)));
+      var inputStream = InputStream(code);
+      console.dir(inputStream, { depth: null });
+
+      var tokenStream = TokenStream(inputStream);
+      console.dir(tokenStream, { depth: null });
+      var ast = parse(tokenStream);
+      console.dir(ast, { depth: null });
+      //   var ast = parse(TokenStream(InputStream(code)));
       evaluate(ast, globalEnv);
     });
   })();

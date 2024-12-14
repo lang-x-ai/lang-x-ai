@@ -1,10 +1,8 @@
-/*
-  Parses the token stream into an abstract syntax tree (AST)
-*/
+/* -----[ the parser ]----- */
+
+// Export the parse function
 export function parse(input) {
-  /*
-    Define operator precedence levels
-  */
+  // Define operator precedence
   var PRECEDENCE = {
     "=": 1,
     "||": 2,
@@ -22,74 +20,51 @@ export function parse(input) {
     "%": 20,
   };
 
-  /*
-    Define a constant for a false boolean value
-  */
-  var FALSE = { type: "bool", value: false };
-
-  /*
-    Start parsing from the top-level
-  */
+  // Start parsing from the top level
   return parse_toplevel();
 
-  /*
-    Checks if the next token is a punctuation
-  */
+  // Check if the next token is a punctuation
   function is_punc(ch) {
     var tok = input.peek();
     return tok && tok.type == "punc" && (!ch || tok.value == ch) && tok;
   }
 
-  /*
-    Checks if the next token is a keyword
-  */
+  // Check if the next token is a keyword
   function is_kw(kw) {
     var tok = input.peek();
     return tok && tok.type == "kw" && (!kw || tok.value == kw) && tok;
   }
 
-  /*
-    Checks if the next token is an operator
-  */
+  // Check if the next token is an operator
   function is_op(op) {
     var tok = input.peek();
     return tok && tok.type == "op" && (!op || tok.value == op) && tok;
   }
 
-  /*
-    Skips a punctuation token
-  */
+  // Skip a punctuation token
   function skip_punc(ch) {
     if (is_punc(ch)) input.next();
     else input.croak('Expecting punctuation: "' + ch + '"');
   }
 
-  /*
-    Skips a keyword token
-  */
+  // Skip a keyword token
   function skip_kw(kw) {
     if (is_kw(kw)) input.next();
     else input.croak('Expecting keyword: "' + kw + '"');
   }
 
-  /*
-    Skips an operator token
-  */
+  // Skip an operator token
   function skip_op(op) {
     if (is_op(op)) input.next();
     else input.croak('Expecting operator: "' + op + '"');
   }
 
-  /*
-    Throws an error for unexpected tokens
-  */
+  // Handle unexpected tokens
   function unexpected() {
     input.croak("Unexpected token: " + JSON.stringify(input.peek()));
   }
 
-  /*
-    Parses binary expressions
-  */
+  // Parse binary expressions
   function maybe_binary(left, my_prec) {
     var tok = is_op();
     if (tok) {
@@ -110,9 +85,7 @@ export function parse(input) {
     return left;
   }
 
-  /*
-    Parses delimited expressions
-  */
+  // Parse delimited expressions
   function delimited(start, stop, separator, parser) {
     var a = [],
       first = true;
@@ -128,9 +101,7 @@ export function parse(input) {
     return a;
   }
 
-  /*
-    Parses function calls
-  */
+  // Parse function calls
   function parse_call(func) {
     return {
       type: "call",
@@ -139,18 +110,53 @@ export function parse(input) {
     };
   }
 
-  /*
-    Parses variable names
-  */
+  // Parse variable names
   function parse_varname() {
     var name = input.next();
     if (name.type != "var") input.croak("Expecting variable name");
     return name.value;
   }
 
-  /*
-    Parses if expressions
-  */
+  // Parse variable definitions
+  function parse_vardef() {
+    var name = parse_varname(),
+      def;
+    if (is_op("=")) {
+      input.next();
+      def = parse_expression();
+    }
+    return { name: name, def: def };
+  }
+
+  // Parse 'let' expressions
+  function parse_let() {
+    skip_kw("let");
+    if (input.peek().type == "var") {
+      var name = input.next().value;
+      var defs = delimited("(", ")", ",", parse_vardef);
+      return {
+        type: "call",
+        func: {
+          type: "lambda",
+          name: name,
+          vars: defs.map(function (def) {
+            return def.name;
+          }),
+          body: parse_expression(),
+        },
+        args: defs.map(function (def) {
+          return def.def || FALSE;
+        }),
+      };
+    }
+    return {
+      type: "let",
+      vars: delimited("(", ")", ",", parse_vardef),
+      body: parse_expression(),
+    };
+  }
+
+  // Parse 'if' expressions
   function parse_if() {
     skip_kw("if");
     var cond = parse_expression();
@@ -168,20 +174,17 @@ export function parse(input) {
     return ret;
   }
 
-  /*
-    Parses lambda expressions
-  */
+  // Parse lambda expressions
   function parse_lambda() {
     return {
       type: "lambda",
+      name: input.peek().type == "var" ? input.next().value : null,
       vars: delimited("(", ")", ",", parse_varname),
       body: parse_expression(),
     };
   }
 
-  /*
-    Parses boolean literals
-  */
+  // Parse boolean literals
   function parse_bool() {
     return {
       type: "bool",
@@ -189,17 +192,24 @@ export function parse(input) {
     };
   }
 
-  /*
-    Parses expressions that might be function calls
-  */
+  // Parse raw JavaScript code
+  function parse_raw() {
+    skip_kw("js:raw");
+    if (input.peek().type != "str")
+      input.croak("js:raw must be a plain string");
+    return {
+      type: "raw",
+      code: input.next().value,
+    };
+  }
+
+  // Parse potential function calls
   function maybe_call(expr) {
     expr = expr();
     return is_punc("(") ? parse_call(expr) : expr;
   }
 
-  /*
-    Parses atomic expressions
-  */
+  // Parse atomic expressions
   function parse_atom() {
     return maybe_call(function () {
       if (is_punc("(")) {
@@ -209,8 +219,17 @@ export function parse(input) {
         return exp;
       }
       if (is_punc("{")) return parse_prog();
+      if (is_op("!")) {
+        input.next();
+        return {
+          type: "not",
+          body: parse_atom(),
+        };
+      }
+      if (is_kw("let")) return parse_let();
       if (is_kw("if")) return parse_if();
       if (is_kw("true") || is_kw("false")) return parse_bool();
+      if (is_kw("js:raw")) return parse_raw();
       if (is_kw("lambda") || is_kw("λ")) {
         input.next();
         return parse_lambda();
@@ -222,9 +241,7 @@ export function parse(input) {
     });
   }
 
-  /*
-    Parses the top-level program
-  */
+  // Parse the top-level program
   function parse_toplevel() {
     var prog = [];
     while (!input.eof()) {
@@ -234,9 +251,7 @@ export function parse(input) {
     return { type: "prog", prog: prog };
   }
 
-  /*
-    Parses program blocks
-  */
+  // Parse program blocks
   function parse_prog() {
     var prog = delimited("{", "}", ";", parse_expression);
     if (prog.length == 0) return FALSE;
@@ -244,9 +259,7 @@ export function parse(input) {
     return { type: "prog", prog: prog };
   }
 
-  /*
-    Parses expressions
-  */
+  // Parse general expressions
   function parse_expression() {
     return maybe_call(function () {
       return maybe_binary(parse_atom(), 0);
