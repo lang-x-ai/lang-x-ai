@@ -1,217 +1,255 @@
-function parse(tokens) {
-  const parsed = initializeParsedStructure();
-  let currentPrompt = null;
-  let currentBlock = initializeBlock();
-  let currentFunction = null;
-  const tokenStack = [];
+/*
+  Parses the token stream into an abstract syntax tree (AST)
+*/
+export function parse(input) {
+  /*
+    Define operator precedence levels
+  */
+  var PRECEDENCE = {
+    "=": 1,
+    "||": 2,
+    "&&": 3,
+    "<": 7,
+    ">": 7,
+    "<=": 7,
+    ">=": 7,
+    "==": 7,
+    "!=": 7,
+    "+": 10,
+    "-": 10,
+    "*": 20,
+    "/": 20,
+    "%": 20,
+  };
 
-  tokens.forEach((token, index) => {
-    switch (token.type) {
-      case "LANG":
-        processLangDeclaration(token, parsed);
-        break;
-      case "PROMPT":
-        currentPrompt = processPrompt(tokens, index);
-        break;
-      case "KEYWORD":
-        if (["const", "let", "var"].includes(token.value)) {
-          const variableDetails = processVariableDeclaration(
-            tokens,
-            index,
-            currentPrompt
-          );
-          if (variableDetails) {
-            parsed.variables[variableDetails.name] = variableDetails;
-            currentBlock.variables[variableDetails.name] = variableDetails;
-            currentPrompt = null;
-          }
-        } else if (token.value === "function") {
-          const functionDetails = processFunctionDeclaration(
-            tokens,
-            index,
-            currentPrompt
-          );
-          if (functionDetails) {
-            parsed.functions[functionDetails.name] = functionDetails;
-            currentBlock.functions[functionDetails.name] = functionDetails;
-            currentFunction = functionDetails.name;
-            currentPrompt = null;
-          }
-        }
-        break;
-      case "IDENTIFIER":
-        if (["const", "let", "var"].includes(token.value)) {
-          processVariableDeclaration(
-            tokens,
-            index,
-            currentBlock,
-            currentPrompt
-          );
-          currentPrompt = null; // Reset prompt after use
-        } else if (token.value === "function") {
-          currentFunction = processFunctionDeclaration(
-            tokens,
-            index,
-            currentBlock,
-            currentPrompt
-          );
-          currentPrompt = null; // Reset prompt after use
-        }
-        break;
+  /*
+    Define a constant for a false boolean value
+  */
+  var FALSE = { type: "bool", value: false };
 
-      case "PUNCTUATION":
-        currentBlock = processPunctuation(
-          token,
-          currentBlock,
-          currentFunction,
-          tokenStack,
-          parsed
+  /*
+    Start parsing from the top-level
+  */
+  return parse_toplevel();
+
+  /*
+    Checks if the next token is a punctuation
+  */
+  function is_punc(ch) {
+    var tok = input.peek();
+    return tok && tok.type == "punc" && (!ch || tok.value == ch) && tok;
+  }
+
+  /*
+    Checks if the next token is a keyword
+  */
+  function is_kw(kw) {
+    var tok = input.peek();
+    return tok && tok.type == "kw" && (!kw || tok.value == kw) && tok;
+  }
+
+  /*
+    Checks if the next token is an operator
+  */
+  function is_op(op) {
+    var tok = input.peek();
+    return tok && tok.type == "op" && (!op || tok.value == op) && tok;
+  }
+
+  /*
+    Skips a punctuation token
+  */
+  function skip_punc(ch) {
+    if (is_punc(ch)) input.next();
+    else input.croak('Expecting punctuation: "' + ch + '"');
+  }
+
+  /*
+    Skips a keyword token
+  */
+  function skip_kw(kw) {
+    if (is_kw(kw)) input.next();
+    else input.croak('Expecting keyword: "' + kw + '"');
+  }
+
+  /*
+    Skips an operator token
+  */
+  function skip_op(op) {
+    if (is_op(op)) input.next();
+    else input.croak('Expecting operator: "' + op + '"');
+  }
+
+  /*
+    Throws an error for unexpected tokens
+  */
+  function unexpected() {
+    input.croak("Unexpected token: " + JSON.stringify(input.peek()));
+  }
+
+  /*
+    Parses binary expressions
+  */
+  function maybe_binary(left, my_prec) {
+    var tok = is_op();
+    if (tok) {
+      var his_prec = PRECEDENCE[tok.value];
+      if (his_prec > my_prec) {
+        input.next();
+        return maybe_binary(
+          {
+            type: tok.value == "=" ? "assign" : "binary",
+            operator: tok.value,
+            left: left,
+            right: maybe_binary(parse_atom(), his_prec),
+          },
+          my_prec
         );
-        if (token.value === "}") currentFunction = null; // Reset function context
-        break;
-      default:
-        break;
+      }
     }
-  });
-
-  finalizeParsing(parsed, tokenStack);
-  return parsed;
-}
-
-export { parse };
-
-// Utility Functions
-
-function initializeParsedStructure() {
-  return {
-    lang: null,
-    variables: {},
-    functions: {},
-    blocks: [],
-  };
-}
-
-function initializeBlock(parent) {
-  return {
-    parent,
-    variables: {},
-    functions: {},
-    statements: [],
-  };
-}
-function processLangDeclaration(token, parsed) {
-  if (!token || !token.value) {
-    throw new Error("Language declaration token is missing or invalid.");
-  }
-  if (parsed.lang) {
-    throw new Error("Multiple language declarations are not allowed.");
+    return left;
   }
 
-  // Extract language directly from the token
-  const match = token.value.match(/lang\s*:\s*(js|ts|java|py|cpp|c|sol)/);
-  if (match) {
-    parsed.lang = match[1];
-  } else {
-    throw new Error("Invalid language declaration.");
+  /*
+    Parses delimited expressions
+  */
+  function delimited(start, stop, separator, parser) {
+    var a = [],
+      first = true;
+    skip_punc(start);
+    while (!input.eof()) {
+      if (is_punc(stop)) break;
+      if (first) first = false;
+      else skip_punc(separator);
+      if (is_punc(stop)) break;
+      a.push(parser());
+    }
+    skip_punc(stop);
+    return a;
   }
-}
 
-function processPrompt(tokens, index) {
-  if (tokens[index + 1] && tokens[index + 1].type === "STRING") {
-    return tokens[index + 1].value.slice(1, -1); // Remove quotes
-  } else {
-    throw new Error("Invalid prompt syntax.");
-  }
-}
-
-function processVariableDeclaration(tokens, index, currentPrompt) {
-  if (
-    tokens[index + 1] &&
-    tokens[index + 1].type === "IDENTIFIER" &&
-    tokens[index + 2] &&
-    tokens[index + 2].type === "OPERATOR" &&
-    tokens[index + 3] &&
-    (tokens[index + 3].type === "NUMBER" ||
-      tokens[index + 3].type === "STRING") &&
-    tokens[index + 4] &&
-    tokens[index + 4].type === "PUNCTUATION" &&
-    tokens[index + 4].value === ";"
-  ) {
-    const varName = tokens[index + 1].value;
-    const varValue = tokens[index + 3].value;
-
+  /*
+    Parses function calls
+  */
+  function parse_call(func) {
     return {
-      name: varName,
-      prompt: currentPrompt || null,
-      value: varValue,
+      type: "call",
+      func: func,
+      args: delimited("(", ")", ",", parse_expression),
     };
   }
 
-  return null;
-}
+  /*
+    Parses variable names
+  */
+  function parse_varname() {
+    var name = input.next();
+    if (name.type != "var") input.croak("Expecting variable name");
+    return name.value;
+  }
 
-function processFunctionDeclaration(tokens, index, currentPrompt) {
-  if (
-    tokens[index + 1] &&
-    tokens[index + 1].type === "IDENTIFIER" &&
-    tokens[index + 2] &&
-    tokens[index + 2].type === "PUNCTUATION" &&
-    tokens[index + 2].value === "(" &&
-    tokens[index + 3] &&
-    tokens[index + 3].type === "PUNCTUATION" &&
-    tokens[index + 3].value === ")" &&
-    tokens[index + 4] &&
-    tokens[index + 4].type === "PUNCTUATION" &&
-    tokens[index + 4].value === "{"
-  ) {
-    const funcName = tokens[index + 1].value;
+  /*
+    Parses if expressions
+  */
+  function parse_if() {
+    skip_kw("if");
+    var cond = parse_expression();
+    if (!is_punc("{")) skip_kw("then");
+    var then = parse_expression();
+    var ret = {
+      type: "if",
+      cond: cond,
+      then: then,
+    };
+    if (is_kw("else")) {
+      input.next();
+      ret.else = parse_expression();
+    }
+    return ret;
+  }
+
+  /*
+    Parses lambda expressions
+  */
+  function parse_lambda() {
     return {
-      name: funcName,
-      prompt: currentPrompt || null,
-      body: [],
+      type: "lambda",
+      vars: delimited("(", ")", ",", parse_varname),
+      body: parse_expression(),
     };
   }
 
-  return null;
-}
+  /*
+    Parses boolean literals
+  */
+  function parse_bool() {
+    return {
+      type: "bool",
+      value: input.next().value == "true",
+    };
+  }
 
-function processPunctuation(
-  token,
-  currentBlock,
-  currentFunction,
-  tokenStack,
-  parsed
-) {
-  if (token.value === "{") {
-    const newBlock = initializeBlock(currentBlock);
-    tokenStack.push(currentBlock);
-    currentBlock = newBlock;
+  /*
+    Parses expressions that might be function calls
+  */
+  function maybe_call(expr) {
+    expr = expr();
+    return is_punc("(") ? parse_call(expr) : expr;
+  }
 
-    // Add newBlock to parsed.blocks
-    parsed.blocks.push(currentBlock);
-  } else if (token.value === "}") {
-    if (!currentBlock.parent) {
-      throw new Error("Unmatched closing brace.");
+  /*
+    Parses atomic expressions
+  */
+  function parse_atom() {
+    return maybe_call(function () {
+      if (is_punc("(")) {
+        input.next();
+        var exp = parse_expression();
+        skip_punc(")");
+        return exp;
+      }
+      if (is_punc("{")) return parse_prog();
+      if (is_kw("if")) return parse_if();
+      if (is_kw("true") || is_kw("false")) return parse_bool();
+      if (is_kw("lambda") || is_kw("λ")) {
+        input.next();
+        return parse_lambda();
+      }
+      var tok = input.next();
+      if (tok.type == "var" || tok.type == "num" || tok.type == "str")
+        return tok;
+      unexpected();
+    });
+  }
+
+  /*
+    Parses the top-level program
+  */
+  function parse_toplevel() {
+    var prog = [];
+    while (!input.eof()) {
+      prog.push(parse_expression());
+      if (!input.eof()) skip_punc(";");
     }
-    currentBlock = tokenStack.pop();
-  }
-  return currentBlock;
-}
-
-function processStatement(token, currentFunction, currentBlock) {
-  if (currentFunction && currentBlock.functions[currentFunction]) {
-    currentBlock.functions[currentFunction].body.push(token);
-  } else {
-    currentBlock.statements.push(token);
-  }
-}
-
-function finalizeParsing(parsed, tokenStack) {
-  if (!parsed.lang) {
-    throw new Error("Missing language declaration.");
+    return { type: "prog", prog: prog };
   }
 
-  if (tokenStack.length > 0) {
-    throw new Error("Unclosed block detected.");
+  /*
+    Parses program blocks
+  */
+  function parse_prog() {
+    var prog = delimited("{", "}", ";", parse_expression);
+    if (prog.length == 0) return FALSE;
+    if (prog.length == 1) return prog[0];
+    return { type: "prog", prog: prog };
+  }
+
+  /*
+    Parses expressions
+  */
+  function parse_expression() {
+    return maybe_call(function () {
+      return maybe_binary(parse_atom(), 0);
+    });
   }
 }

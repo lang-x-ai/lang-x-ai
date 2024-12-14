@@ -3,85 +3,33 @@ import { generateAIResponse } from "./aiModel.js";
 async function translate(parsedData) {
   const { lang, prompt, functions, variables, blocks } = parsedData;
 
+  // There are a bunch of empty {} or [] being created in the parsedData.
+  // I need to fix the promts.
+
   // Validate input
   if (!lang) {
     throw new Error("Target language or prompt is missing");
   }
-
-  // Prepare detailed descriptions for variables
-  let variableDescriptions = Object.entries(variables)
-    .map(([name, details]) => {
-      return `Variable: ${name}
-- Description: ${details.prompt || "No specific description"}
-- Value: ${details.value}`;
-    })
-    .join("\n\n");
-
-  // Prepare detailed descriptions for functions
-  let functionDescriptions = Object.entries(functions)
-    .map(([name, details]) => {
-      // Convert function body tokens to readable string
-      const functionBody = details.body
-        ? details.body.map((token) => `${token.type}: ${token.value}`).join(" ")
-        : "No body defined";
-
-      return `Function: ${name}
-- Description: ${details.prompt || "No specific description"}
-- Body Preview: ${functionBody}`;
-    })
-    .join("\n\n");
-
-  // Prepare block context
-  let blockDescriptions = blocks
-    .map((block, index) => {
-      const blockVariables = Object.keys(block.variables).join(", ") || "None";
-      const blockFunctions = Object.keys(block.functions).join(", ") || "None";
-
-      return `Block ${index + 1}:
-- Variables: ${blockVariables}
-- Functions: ${blockFunctions}`;
-    })
-    .join("\n\n");
-
-  // Create comprehensive AI prompt
   const aiPrompt = `
-Code Generation Request for ${lang.toUpperCase()} Language
+  You are a highly skilled and precise coding assistant. Your task is to generate code snippets in the target language specified. The goal is to accurately translate or adapt provided "blocks" of code to the "lang" target while integrating necessary logic from "variables" or "functions." 
+  
+  ### Input Details:
+  - Target language: ${lang}
+  - Prompt/Description: ${prompt}
+  - Available functions: ${functions}
+  - Variables/context to use: ${variables}
+  - Code blocks for translation: 
+  ${blocks}
+  
+  ### Expected Output:
+  - Fully translated and functional code in ${lang}.
+  - Ensure proper syntax, formatting, and coding conventions for ${lang}.
+  - Include comments explaining any significant transformations or assumptions.
+  
+  Provide only the translated code, without additional explanations.
+  `;
 
-Project Overview:
-${prompt}
-
-Detailed Context:
-
-1. Global Variables:
-${variableDescriptions || "No global variables defined"}
-
-2. Global Functions:
-${functionDescriptions || "No global functions defined"}
-
-3. Block Structure:
-${blockDescriptions || "No complex block structure"}
-
-Generation Requirements:
-- Produce fully functional ${lang} code
-- Implement all described variables and functions
-- Maintain the intended logic and structure
-- Add appropriate comments explaining the code
-- Follow ${lang} language best practices
-- Ensure readability and maintainability
-- Just code, no explanation, the reponse should be just in ${lang} 
-
-Output Format:
-- Provide complete, executable code
-- Include necessary imports or dependencies
-- Use proper ${lang} syntax and conventions
-
-Important Notes:
-- Preserve the original intent described in the project overview
-- If any implementation details are ambiguous, make reasonable assumptions
-- Focus on clean, efficient code implementation
-
-Please generate the code strictly based on the provided specifications.
-`;
+  console.log(aiPrompt);
 
   // Generate and return the code
   return await generateAIResponse(aiPrompt.trim());

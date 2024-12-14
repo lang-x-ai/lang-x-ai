@@ -1,86 +1,152 @@
-function tokenize(code) {
-  const tokens = [];
+// TokenStream handles tokenizing the input stream
+export function TokenStream(input) {
+  var current = null;
+  var keywords = " if then else lambda λ true false prompt";
+  return {
+    next: next,
+    peek: peek,
+    eof: eof,
+    croak: input.croak,
+  };
 
-  const tokenSpec = [
-    // Keywords
-    [
-      "KEYWORD",
-      /^(let|const|var|function|if|else|for|while|return|class|extends|implements|import|export|default|from)\b/,
-    ],
+  // Checks if a string is a keyword
+  function is_keyword(x) {
+    return keywords.indexOf(" " + x + " ") >= 0;
+  }
 
-    // Prompt declaration
-    ["PROMPT", /^prompt\s*:/],
+  // Checks if a character is a digit
+  function is_digit(ch) {
+    return /[0-9]/i.test(ch);
+  }
 
-    // Language declaration
-    ["LANG", /^lang\s*:\s*(js|ts|java|py|cpp|c|sol)/],
+  // Checks if a character can start an identifier
+  function is_id_start(ch) {
+    return /[a-zλ_]/i.test(ch);
+  }
 
-    // Identifiers (variable/function names, excluding keywords)
-    [
-      "IDENTIFIER",
-      /^(?!let\b|const\b|var\b|function\b|if\b|else\b|for\b|while\b|return\b|class\b|extends\b|implements\b|import\b|export\b|default\b|from\b|prompt\b)[a-zA-Z_$][a-zA-Z0-9_$]*/,
-    ],
+  // Checks if a character can be part of an identifier
+  function is_id(ch) {
+    return is_id_start(ch) || "?!-<>=0123456789".indexOf(ch) >= 0;
+  }
 
-    // Numbers
-    ["NUMBER", /^\d+(\.\d+)?/],
+  // Checks if a character is an operator
+  function is_op_char(ch) {
+    return "+-*/%=&|<>!".indexOf(ch) >= 0;
+  }
 
-    // Strings
-    ["STRING", /^"([^"\\]|\\.)*"|^'([^'\\]|\\.)*'/],
+  // Checks if a character is punctuation
+  function is_punc(ch) {
+    return ",;(){}[]".indexOf(ch) >= 0;
+  }
 
-    // Operators
-    [
-      "OPERATOR",
-      /^(\+|\-|\*|\/|=|===|==|!==|!=|<|>|<=|>=|\+\+|\-\-|\+=|-=|\*=|\/=|\|\||&&|!)/,
-    ],
+  // Checks if a character is whitespace
+  function is_whitespace(ch) {
+    return " \t\n".indexOf(ch) >= 0;
+  }
 
-    // Punctuation
-    ["PUNCTUATION", /^(\{|\}|\(|\)|\[|\]|;|,|\.)/],
+  // Reads characters while a predicate is true
+  function read_while(predicate) {
+    var str = "";
+    while (!input.eof() && predicate(input.peek())) str += input.next();
+    return str;
+  }
 
-    // Colon for other uses
-    ["COLON", /^:/],
-
-    // Whitespace (ignored)
-    ["WHITESPACE", /^\s+/],
-  ];
-
-  // Split code into lines for better error handling
-  const lines = code.split("\n");
-
-  lines.forEach((line, lineNumber) => {
-    let currentLine = line;
-    while (currentLine.length > 0) {
-      currentLine = currentLine.trimStart();
-      let matched = false;
-
-      for (const [type, pattern] of tokenSpec) {
-        const match = currentLine.match(pattern);
-        if (match) {
-          // Ignore whitespace tokens
-          if (type !== "WHITESPACE") {
-            tokens.push({
-              type,
-              value: match[0],
-              line: lineNumber + 1,
-              column: line.length - currentLine.length + 1,
-            });
-          }
-
-          // Remove the matched token from the line
-          currentLine = currentLine.slice(match[0].length);
-          matched = true;
-          break;
-        }
+  // Reads a number token
+  function read_number() {
+    var has_dot = false;
+    var number = read_while(function (ch) {
+      if (ch == ".") {
+        if (has_dot) return false;
+        has_dot = true;
+        return true;
       }
+      return is_digit(ch);
+    });
+    return { type: "num", value: parseFloat(number) };
+  }
 
-      // If no token matches, throw an error
-      if (!matched) {
-        throw new Error(
-          `Unrecognized token at line ${lineNumber + 1}: ${currentLine.trim()}`
-        );
+  // Reads an identifier token
+  function read_ident() {
+    var id = read_while(is_id);
+    return {
+      type: is_keyword(id) ? "kw" : "var",
+      value: id,
+    };
+  }
+
+  // Reads an escaped string
+  function read_escaped(end) {
+    var escaped = false,
+      str = "";
+    input.next();
+    while (!input.eof()) {
+      var ch = input.next();
+      if (escaped) {
+        str += ch;
+        escaped = false;
+      } else if (ch == "\\") {
+        escaped = true;
+      } else if (ch == end) {
+        break;
+      } else {
+        str += ch;
       }
     }
-  });
+    return str;
+  }
 
-  return tokens;
+  // Reads a string token
+  function read_string() {
+    return { type: "str", value: read_escaped('"') };
+  }
+
+  // Skips a comment
+  function skip_comment() {
+    read_while(function (ch) {
+      return ch != "\n";
+    });
+    input.next();
+  }
+
+  // Reads the next token
+  function read_next() {
+    read_while(is_whitespace);
+    if (input.eof()) return null;
+    var ch = input.peek();
+    if (ch == "#") {
+      skip_comment();
+      return read_next();
+    }
+    if (ch == '"') return read_string();
+    if (is_digit(ch)) return read_number();
+    if (is_id_start(ch)) return read_ident();
+    if (is_punc(ch))
+      return {
+        type: "punc",
+        value: input.next(),
+      };
+    if (is_op_char(ch))
+      return {
+        type: "op",
+        value: read_while(is_op_char),
+      };
+    input.croak("Can't handle character: " + ch);
+  }
+
+  // Peeks at the next token
+  function peek() {
+    return current || (current = read_next());
+  }
+
+  // Returns the next token
+  function next() {
+    var tok = current;
+    current = null;
+    return tok || read_next();
+  }
+
+  // Checks if the end of the token stream is reached
+  function eof() {
+    return peek() == null;
+  }
 }
-
-export { tokenize };

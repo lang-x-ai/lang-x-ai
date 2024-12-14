@@ -37,12 +37,15 @@ export async function cli() {
 
     // Tokenize the code
     const tokens = tokenize(code);
+    console.log(code);
 
     // Parse tokens into data
     const parsedData = parse(tokens);
+    console.log(parsedData);
 
     // Translate parsed data into target code
     const generatedCode = await translate(parsedData);
+    console.log();
 
     const targetLanguage = parsedData.lang;
 
