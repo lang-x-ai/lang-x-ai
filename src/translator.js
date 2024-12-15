@@ -26,7 +26,7 @@ Here are the rules for the AST:
 
 6. **Output**: Provide only the translated code, without additional explanations.
 
-7. write in py
+7. write in c
 
 Use the entire codebase as context to ensure consistency and accuracy in translation. The target language is specified in the input, and the output should adhere to its syntax and conventions.
 
