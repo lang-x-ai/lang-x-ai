@@ -56,15 +56,15 @@ try {
   const fileExtensions = {
     js: ".js",
     ts: ".ts",
-    py: ".py",
-    java: ".java",
-    c: ".c",
-    cpp: ".cpp",
+    py: ".py", // works
+    java: ".java", // Prompt for java doesnt work as intended
+    c: ".c", // works
+    cpp: ".cpp", // Prompt for cpp doesnt work as intended
     sol: ".sol",
   };
 
   // Determine the file extension for the target language
-  const fileExtension = fileExtensions[targetLanguage] || ".c";
+  const fileExtension = fileExtensions[targetLanguage] || ".sol";
 
   // Construct the output file name
   const output = `output${fileExtension}`;
