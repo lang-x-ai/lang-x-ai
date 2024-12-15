@@ -17,6 +17,8 @@ Here are the rules for the AST:
 
 2. **Traversal**: Traverse the AST in a depth-first manner to ensure all nodes are visited and processed.
 
+2.1. **prompt** are ai prompts similar to prompt engineering. consider all the prompts in the ast as ai prompts and not print statements. The prompt is there to give more context about the code. If the prompt is null, then ignore else use the prompt as context.
+
 3. **Transformation**: Apply transformations based on node types. 
 4. **Contextual Integration**: Ensure that the translated code integrates seamlessly with existing code. This includes:
    - Maintaining variable scope and function context.
@@ -40,4 +42,3 @@ Here is the data = ${parsedData}
   // Generate and return the code
   return await generateAIResponse(aiPrompt.trim());
 }
-

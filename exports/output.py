@@ -1,9 +1,8 @@
-def print_range(a, b):
-    if a <= b:
-        print(a)
-        if a + 1 <= b:
-            print_range(a + 1, b)
-        else:
-            print("")
+# Welcome to the Command-Line Calculator!, You can perform operations like addition, subtraction, multiplication, and division. Type 'exit' to quit the calculator.
 
-print_range(1, 10)
+calculator = lambda x, y: (
+    (add := lambda x, y: x + y),
+    (sub := lambda x, y: x - y),
+    (mul := lambda x, y: x * y),
+    (div := lambda x, y: x / y)
+)

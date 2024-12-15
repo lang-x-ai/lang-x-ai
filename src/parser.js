@@ -181,6 +181,20 @@ export function parse(input) {
       name: input.peek().type == "var" ? input.next().value : null,
       vars: delimited("(", ")", ",", parse_varname),
       body: parse_expression(),
+      prompt: is_kw("prompt") ? parse_prompt() : null, // Check for prompt
+    };
+  }
+
+  // Parse prompt expressions
+  function parse_prompt() {
+    skip_kw("prompt"); // Ensure the next token is the "prompt" keyword
+    var promptString = input.next();
+    if (promptString.type != "str") {
+      input.croak("Expecting a string after 'prompt'");
+    }
+    return {
+      type: "prompt",
+      value: promptString.value,
     };
   }
 
@@ -234,6 +248,7 @@ export function parse(input) {
         input.next();
         return parse_lambda();
       }
+      if (is_kw("prompt")) return parse_prompt();
       var tok = input.next();
       if (tok.type == "var" || tok.type == "num" || tok.type == "str")
         return tok;

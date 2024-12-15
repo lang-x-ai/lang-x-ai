@@ -17,9 +17,6 @@ async function generateAIResponse(prompt) {
 
   // Check if the API key is available
   if (!apiKey) {
-    console.error(
-      "API key is missing. Please set the OPENAI_API_KEY environment variable."
-    );
     throw new Error(
       "API key is missing. Please set the OPENAI_API_KEY environment variable."
     );
