@@ -1,71 +1,52 @@
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
-// Function prototypes
-void calculator(float x, float y);
-float add(float x, float y);
-float sub(float x, float y);
-float mul(float x, float y);
-float div(float x, float y);
+// have a commandline interactive calculator, which takes two inputs and does some calcuations.
 
-int main() {
-    printf("Welcome to the Command-Line Calculator!\n");
-    printf("You can perform operations like addition, subtraction, multiplication, and division.\n");
-    printf("Type 'exit' to quit the calculator.\n");
-
-    float x, y;
-    char operation[10];
-
-    while (1) {
-        printf("Enter operation (add, sub, mul, div) or 'exit': ");
-        scanf("%s", operation);
-
-        if (strcmp(operation, "exit") == 0) {
-            break;
-        }
-
-        printf("Enter two numbers: ");
-        scanf("%f %f", &x, &y);
-
-        if (strcmp(operation, "add") == 0) {
-            printf("Result: %.2f\n", add(x, y));
-        } else if (strcmp(operation, "sub") == 0) {
-            printf("Result: %.2f\n", sub(x, y));
-        } else if (strcmp(operation, "mul") == 0) {
-            printf("Result: %.2f\n", mul(x, y));
-        } else if (strcmp(operation, "div") == 0) {
-            // Check for division by zero
-            if (y == 0) {
-                printf("Error: Division by zero.\n");
-            } else {
-                printf("Result: %.2f\n", div(x, y));
-            }
-        } else {
-            printf("Invalid operation.\n");
-        }
-    }
-
-    return 0;
-}
-
-// Calculator functions
-void calculator(float x, float y) {
-    // Function is empty as the main logic is in the main function
-}
-
-float add(float x, float y) {
+int add(int x, int y) {
     return x + y;
 }
 
-float sub(float x, float y) {
+int sub(int x, int y) {
     return x - y;
 }
 
-float mul(float x, float y) {
+int mul(int x, int y) {
     return x * y;
 }
 
-float div(float x, float y) {
+int div(int x, int y) {
     return x / y;
+}
+
+// Example usage
+int main() {
+    int x, y;
+    char op;
+    printf("Enter two numbers: ");
+    scanf("%d %d", &x, &y);
+    printf("Choose operation (+, -, *, /): ");
+    scanf(" %c", &op);
+
+    switch(op) {
+        case '+':
+            printf("Result: %d\n", add(x, y));
+            break;
+        case '-':
+            printf("Result: %d\n", sub(x, y));
+            break;
+        case '*':
+            printf("Result: %d\n", mul(x, y));
+            break;
+        case '/':
+            if (y != 0) {
+                printf("Result: %d\n", div(x, y));
+            } else {
+                printf("Cannot divide by zero!\n");
+            }
+            break;
+        default:
+            printf("Invalid operation!\n");
+    }
+
+    return 0;
 }

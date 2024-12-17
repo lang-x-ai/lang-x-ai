@@ -1,33 +1,26 @@
-// SPDX-License-Identifier: MIT
+// This smart contract acts as a command-line interactive calculator which takes two inputs and performs various calculations.
 pragma solidity ^0.8.0;
 
-/// @notice Have a commandline interactive calculator, which takes two inputs and does some calculations.
 contract Calculator {
-    function calculator(uint x, uint y) public pure returns (uint addResult, uint subResult, uint mulResult, uint divResult) {
-        // Addition
-        addResult = add(x, y);
-        // Subtraction
-        subResult = sub(x, y);
-        // Multiplication
-        mulResult = mul(x, y);
-        // Division
-        divResult = div(x, y);
-    }
-    
-    function add(uint x, uint y) internal pure returns (uint) {
+
+    // Function to add two numbers
+    function add(int x, int y) public pure returns (int) {
         return x + y;
     }
-    
-    function sub(uint x, uint y) internal pure returns (uint) {
+
+    // Function to subtract y from x
+    function sub(int x, int y) public pure returns (int) {
         return x - y;
     }
-    
-    function mul(uint x, uint y) internal pure returns (uint) {
+
+    // Function to multiply two numbers
+    function mul(int x, int y) public pure returns (int) {
         return x * y;
     }
-    
-    function div(uint x, uint y) internal pure returns (uint) {
-        require(y != 0, "Division by zero");
+
+    // Function to divide x by y
+    function div(int x, int y) public pure returns (int) {
+        require(y != 0, "Division by zero is not allowed.");
         return x / y;
     }
 }

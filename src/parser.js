@@ -137,7 +137,7 @@ export function parse(input) {
       return {
         type: "call",
         func: {
-          type: "lambda",
+          type: "func",
           name: name,
           vars: defs.map(function (def) {
             return def.name;
@@ -174,10 +174,10 @@ export function parse(input) {
     return ret;
   }
 
-  // Parse lambda expressions
+  // Parse func expressions
   function parse_lambda() {
     return {
-      type: "lambda",
+      type: "func",
       name: input.peek().type == "var" ? input.next().value : null,
       vars: delimited("(", ")", ",", parse_varname),
       body: parse_expression(),
@@ -244,7 +244,7 @@ export function parse(input) {
       if (is_kw("if")) return parse_if();
       if (is_kw("true") || is_kw("false")) return parse_bool();
       if (is_kw("js:raw")) return parse_raw();
-      if (is_kw("lambda") || is_kw("λ")) {
+      if (is_kw("func") || is_kw("λ")) {
         input.next();
         return parse_lambda();
       }

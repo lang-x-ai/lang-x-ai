@@ -64,7 +64,7 @@ try {
   };
 
   // Determine the file extension for the target language
-  const fileExtension = fileExtensions[targetLanguage] || ".sol";
+  const fileExtension = fileExtensions[targetLanguage] || ".c";
 
   // Construct the output file name
   const output = `output${fileExtension}`;
