@@ -28,13 +28,15 @@ Here are the rules for the AST:
 
 6. **Output**: Provide only the translated code, without additional explanations.
 
-7. write in c
+7. **Language**: I need you to write me it in provided in the ast. The ast has 3 parts, type, lang and prog. Prog continues the program. Consider the lang or language 
+                 as the programming language to write in. Its gonna be a dot extension. 
 
 Use the entire codebase as context to ensure consistency and accuracy in translation. The target language is specified in the input, and the output should adhere to its syntax and conventions.
 
 Begin the translation process by analyzing the provided code block and applying the AST rules accordingly.
 
 Here is the data = ${parsedData}
+
   `;
 
   console.log(aiPrompt);

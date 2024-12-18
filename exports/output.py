@@ -1,8 +1,14 @@
-# Welcome to the Command-Line Calculator!, You can perform operations like addition, subtraction, multiplication, and division. Type 'exit' to quit the calculator.
+def calculator(x, y):
+    """ Have a commandline interactive calculator, which takes two inputs and does some calculations. """
+    
+    def add(x, y):
+        return x + y
 
-calculator = lambda x, y: (
-    (add := lambda x, y: x + y),
-    (sub := lambda x, y: x - y),
-    (mul := lambda x, y: x * y),
-    (div := lambda x, y: x / y)
-)
+    def sub(x, y):
+        return x - y
+
+    def mul(x, y):
+        return x * y
+
+    def div(x, y):
+        return x / y

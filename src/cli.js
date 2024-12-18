@@ -52,19 +52,7 @@ try {
   // Translate the AST into code for the target language
   const generatedCode = await translate(JSON.stringify(parsedData, null, 2));
 
-  // Mapping of target languages to file extensions
-  const fileExtensions = {
-    js: ".js",
-    ts: ".ts",
-    py: ".py", // works
-    java: ".java", // Prompt for java doesnt work as intended
-    c: ".c", // works
-    cpp: ".cpp", // Prompt for cpp doesnt work as intended
-    sol: ".sol",
-  };
-
-  // Determine the file extension for the target language
-  const fileExtension = fileExtensions[targetLanguage] || ".c";
+  const fileExtension = parsedData.lang;
 
   // Construct the output file name
   const output = `output${fileExtension}`;

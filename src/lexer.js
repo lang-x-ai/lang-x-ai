@@ -1,7 +1,8 @@
 // TokenStream handles tokenizing the input stream
 export function TokenStream(input) {
   var current = null; // Holds the current token
-  var keywords = " let if then else lambda λ true func false prompt js:raw "; // List of keywords
+  var keywords =
+    " let if then else lambda λ true func false prompt js:raw lang "; // List of keywords
 
   return {
     next: next,

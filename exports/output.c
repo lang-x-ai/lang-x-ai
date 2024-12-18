@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-// have a commandline interactive calculator, which takes two inputs and does some calcuations.
+// have a commandline interactive calculator, which takes two inputs and does some calculations.
 
 int add(int x, int y) {
     return x + y;
@@ -18,35 +18,21 @@ int div(int x, int y) {
     return x / y;
 }
 
-// Example usage
-int main() {
-    int x, y;
-    char op;
+// Interactive calculator function
+int calculator(int x, int y) {
+    int a, b;
     printf("Enter two numbers: ");
-    scanf("%d %d", &x, &y);
-    printf("Choose operation (+, -, *, /): ");
-    scanf(" %c", &op);
+    scanf("%d %d", &a, &b);
+    
+    printf("Addition: %d\n", add(a, b));
+    printf("Subtraction: %d\n", sub(a, b));
+    printf("Multiplication: %d\n", mul(a, b));
+    printf("Division: %d\n", div(a, b));
+    
+    return 0;
+}
 
-    switch(op) {
-        case '+':
-            printf("Result: %d\n", add(x, y));
-            break;
-        case '-':
-            printf("Result: %d\n", sub(x, y));
-            break;
-        case '*':
-            printf("Result: %d\n", mul(x, y));
-            break;
-        case '/':
-            if (y != 0) {
-                printf("Result: %d\n", div(x, y));
-            } else {
-                printf("Cannot divide by zero!\n");
-            }
-            break;
-        default:
-            printf("Invalid operation!\n");
-    }
-
+int main() {
+    calculator(0, 0);
     return 0;
 }

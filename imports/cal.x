@@ -1,7 +1,8 @@
-  calculator = func(x, y) {
-  prompt "have a commandline interactive calculator, which takes two inputs and does some calcuations.";
-     add = func(x, y) { x + y };
-     sub = func(x, y) { x - y };
-     mul = func(x, y) { x * y };
-     div = func(x, y) { x / y};
+lang = "java";
+Company = func(x) {
+  prompt "Company is a class. I need a constructor. There are Tech jobs, marketing jobs, sales as well with salary";
+  Tech = func(x) { 5000};
+  Sales = func(x) { 2000};
+  Market = func(x) { 1000};
 };
+

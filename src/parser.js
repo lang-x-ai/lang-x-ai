@@ -128,6 +128,44 @@ export function parse(input) {
     return { name: name, def: def };
   }
 
+  function parse_lang() {
+    skip_kw("lang");
+
+    if (is_op("=")) {
+      input.next(); // Skip the '=' operator
+      var langToken = input.next(); // Get the next token directly
+
+      var fileExtensions = {
+        js: ".js",
+        ts: ".ts",
+        py: ".py",
+        java: ".java",
+        c: ".c",
+        cpp: ".cpp",
+        sol: ".sol",
+        asm: ".asm",
+      };
+
+      // Check if the langToken is a valid language extension
+      if (!fileExtensions.hasOwnProperty(langToken.value)) {
+        input.croak("Invalid language: " + langToken.value);
+      }
+
+      // Get the file extension for the language
+      var extension = fileExtensions[langToken.value] || ".js";
+    } else {
+      input.croak("Invalid declaration");
+    }
+
+    skip_punc(";");
+
+    return {
+      type: "lang",
+      extension: extension,
+      body: parse_expression(),
+    };
+  }
+
   // Parse 'let' expressions
   function parse_let() {
     skip_kw("let");
@@ -181,7 +219,7 @@ export function parse(input) {
       name: input.peek().type == "var" ? input.next().value : null,
       vars: delimited("(", ")", ",", parse_varname),
       body: parse_expression(),
-      prompt: is_kw("prompt") ? parse_prompt() : null, // Check for prompt
+      prompt: is_kw("prompt") ? parse_prompt() : null,
     };
   }
 
@@ -240,10 +278,12 @@ export function parse(input) {
           body: parse_atom(),
         };
       }
+
       if (is_kw("let")) return parse_let();
       if (is_kw("if")) return parse_if();
       if (is_kw("true") || is_kw("false")) return parse_bool();
       if (is_kw("js:raw")) return parse_raw();
+      if (is_kw("lang")) return parse_lang();
       if (is_kw("func") || is_kw("λ")) {
         input.next();
         return parse_lambda();
@@ -259,11 +299,19 @@ export function parse(input) {
   // Parse the top-level program
   function parse_toplevel() {
     var prog = [];
+    var lang = ".js";
+
     while (!input.eof()) {
-      prog.push(parse_expression());
+      if (is_kw("lang")) {
+        var langNode = parse_lang();
+        lang = langNode.extension; // Set the language based on the parsed lang node
+        prog.push(langNode.body); // Add the body of the lang node to the program
+      } else {
+        prog.push(parse_expression());
+      }
       if (!input.eof()) skip_punc(";");
     }
-    return { type: "prog", prog: prog };
+    return { type: "prog", lang: lang, prog: prog };
   }
 
   // Parse program blocks

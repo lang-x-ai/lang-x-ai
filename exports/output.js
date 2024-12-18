@@ -1,7 +1,18 @@
-// Command-line interactive calculator taking two inputs to perform calculations
-const calculator = (x, y) => {
-    const add = (x, y) => x + y;
-    const sub = (x, y) => x - y;
-    const mul = (x, y) => x * y;
-    const div = (x, y) => x / y;
+const calculator = function(x, y) {
+    // have a commandline interactive calculator, which takes two inputs and does some calculations.
+    const add = function(x, y) {
+        return x + y;
+    };
+
+    const sub = function(x, y) {
+        return x - y;
+    };
+    
+    const mul = function(x, y) {
+        return x * y;
+    };
+
+    const div = function(x, y) {
+        return x / y;
+    };
 };
