@@ -1,30 +1,16 @@
 pragma solidity ^0.8.0;
 
-// This contract is an interactive command-line calculator 
-// that performs basic arithmetic on two inputs.
-contract CommandlineCalculator {
-
-    function calculator(int x, int y) public pure returns (int addResult, int subResult, int mulResult, int divResult) {
-        addResult = add(x, y);
-        subResult = sub(x, y);
-        mulResult = mul(x, y);
-        divResult = div(x, y);
+// Company is a class. I need a constructor. There are Tech jobs, marketing jobs, sales as well with salary
+contract Company {
+    function Tech(uint salary) internal pure returns (uint) {
+        return 5000;
     }
 
-    function add(int x, int y) private pure returns (int) {
-        return x + y;
+    function Sales(uint salary) internal pure returns (uint) {
+        return 2000;
     }
 
-    function sub(int x, int y) private pure returns (int) {
-        return x - y;
-    }
-
-    function mul(int x, int y) private pure returns (int) {
-        return x * y;
-    }
-
-    function div(int x, int y) private pure returns (int) {
-        require(y != 0, "Cannot divide by zero");
-        return x / y;
+    function Market(uint salary) internal pure returns (uint) {
+        return 1000;
     }
 }
